@@ -1,0 +1,76 @@
+# -------------------------------
+# Python bytecode + cache folders
+# -------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# -------------------------------
+# Virtual environments
+# -------------------------------
+venv/
+env/
+.marketmind310/
+*.conda
+*.env
+*.venv
+
+# -------------------------------
+# Streamlit internal state
+# -------------------------------
+.streamlit/credentials.toml
+.streamlit/secrets.toml
+
+# -------------------------------
+# Logs, dumps, temp files
+# -------------------------------
+*.log
+*.tmp
+*.bak
+
+# -------------------------------
+# OS / Editor noise
+# -------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# -------------------------------
+# Python build artifacts
+# -------------------------------
+build/
+dist/
+*.egg-info/
+
+# -------------------------------
+# Local backups
+# -------------------------------
+backup_*/
+*backup*/
+RippleTruth_Backups/
+
+# -------------------------------
+# Image cache / OCR outputs
+# -------------------------------
+*.png
+*.jpg
+*.jpeg
+ocr_cache/
+temp_images/
+
+# -------------------------------
+# Sensitive / optional files
+# -------------------------------
+*.key
+*.pem
+*.token
+
+# -------------------------------
+# Ignore compiled HTML exports
+# -------------------------------
+*.html
+!README.md
