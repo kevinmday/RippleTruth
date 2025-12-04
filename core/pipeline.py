@@ -3,6 +3,10 @@ from core.intention_math import run_intention_math
 from core.traceback_engine import run_traceback
 from utils.report_templates import build_markdown_report
 
+print("🔍 DEBUG (Cloud): narrative_classifier =", analyze_narrative)
+print("🔍 DEBUG (Cloud): intention_math =", run_intention_math)
+print("🔍 DEBUG (Cloud): traceback_engine =", run_traceback)
+
 
 def run_rippletruth_pipeline(text: str) -> dict:
     """
