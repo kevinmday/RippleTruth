@@ -7,6 +7,8 @@ from core.pipeline import run_rippletruth_pipeline
 
 st.set_page_config(page_title="RippleTruth", layout="wide")
 
+st.markdown("## ⚠ DEBUG: THIS IS THE TRUE APP.PY (LOCAL VERSION RUNNING)")
+
 # --------------------------------------------------------
 # GLOBAL STYLE
 # --------------------------------------------------------
