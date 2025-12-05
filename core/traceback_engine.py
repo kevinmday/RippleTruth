@@ -1,5 +1,9 @@
 import numpy as np
 
+# Bind to package namespace for Streamlit Cloud resolution
+from rippletruth.core import intention_math
+
+
 # ---------------------------------------------------------
 # Actor Probability Templates
 # These are NOT classifications — they are priors.
@@ -12,12 +16,14 @@ ACTOR_PRIORS = {
     "Institution / Organization": 0.18,
 }
 
+
 # ---------------------------------------------------------
 # Mutation Likelihood — stability inverse + volatility
 # ---------------------------------------------------------
 def _mutation_likelihood(stability: float, volatility: float) -> float:
     mut = (1 - stability) * 0.6 + volatility * 0.4
     return float(np.clip(mut, 0, 1))
+
 
 # ---------------------------------------------------------
 # Amplification Pattern — coherence vs chaos
@@ -29,6 +35,7 @@ def _amplification_pattern(ucip: float, ttcf: float) -> float:
     """
     amp = (ucip * 0.5) - (ttcf * 0.5)
     return float(np.clip((amp + 1) / 2, 0, 1))
+
 
 # ---------------------------------------------------------
 # Core Actor Scoring Formula
@@ -56,6 +63,7 @@ def _score_actor(intent_strength, stability, harmonics, ripplescore):
 
     probs = scores / scores.sum()
     return {actor: float(probs[i]) for i, actor in enumerate(ACTOR_PRIORS.keys())}
+
 
 # ---------------------------------------------------------
 # Traceback Engine (REAL VERSION)

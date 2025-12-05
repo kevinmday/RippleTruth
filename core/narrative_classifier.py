@@ -1,6 +1,10 @@
 import re
 import textwrap
 
+# Bind this module explicitly to the package (Cloud-safe)
+from rippletruth.core import intention_math
+
+
 def analyze_narrative(text: str) -> dict:
     """
     RippleScan Lite: Performs basic topic detection, polarity,

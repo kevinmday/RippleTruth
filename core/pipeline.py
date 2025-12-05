@@ -1,7 +1,7 @@
-from core.narrative_classifier import analyze_narrative
-from core.intention_math import run_intention_math
-from core.traceback_engine import run_traceback
-from utils.report_templates import build_markdown_report
+from rippletruth.core.narrative_classifier import analyze_narrative
+from rippletruth.core.intention_math import run_intention_math
+from rippletruth.core.traceback_engine import run_traceback
+from rippletruth.utils.report_templates import build_markdown_report
 
 print("🔍 DEBUG (Cloud): narrative_classifier =", analyze_narrative)
 print("🔍 DEBUG (Cloud): intention_math =", run_intention_math)
@@ -48,4 +48,3 @@ def run_rippletruth_pipeline(text: str) -> dict:
         "intention": intention,
         "traceback": trace
     }
-

@@ -2,6 +2,10 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# Ensure Cloud recognizes this module as part of the rippletruth package
+# (No functions imported — this is namespace-binding only)
+from rippletruth.core import narrative_classifier
+
 
 # ---------------------------------------------------------
 # HELPER: Convert text into TF-IDF vector (semantic anchor)
@@ -211,3 +215,4 @@ def run_intention_math(text: str, narrative: dict) -> dict:
             "harmonics": harmonics,
         }
     }
+

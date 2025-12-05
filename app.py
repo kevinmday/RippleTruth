@@ -3,7 +3,8 @@ import requests
 from PIL import Image
 from io import BytesIO
 
-from core.pipeline import run_rippletruth_pipeline
+from rippletruth.core.pipeline import run_rippletruth_pipeline
+
 
 st.set_page_config(page_title="RippleTruth", layout="wide")
 

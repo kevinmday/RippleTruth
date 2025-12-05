@@ -1,5 +1,8 @@
 import textwrap
 
+# Bind to package so Streamlit Cloud resolves namespace correctly
+from rippletruth.core import pipeline
+
 
 def build_markdown_report(narrative: dict, intention: dict, traceback: dict) -> str:
     """
