@@ -2,10 +2,6 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Ensure Cloud recognizes this module as part of the rippletruth package
-# (No functions imported — this is namespace-binding only)
-from rippletruth.core import narrative_classifier
-
 
 # ---------------------------------------------------------
 # HELPER: Convert text into TF-IDF vector (semantic anchor)
@@ -100,10 +96,6 @@ def _emotional_volatility(text: str) -> float:
 # NARRATIVE HARMONICS — multi-frequency intent alignment
 # ---------------------------------------------------------
 def _narrative_harmonics(text: str) -> float:
-    """
-    Measures repeating patterns & rhetorical cycles.
-    More repetition → stronger harmonic intention field.
-    """
     words = text.lower().split()
     if not words:
         return 0.0
@@ -138,13 +130,9 @@ def compute_ucip(fils, stability, harmonics):
 
 
 # ---------------------------------------------------------
-# TTCF — Trump Tensor Chaos Factor (general chaos index)
+# TTCF — Trump Tensor Chaos Factor
 # ---------------------------------------------------------
 def compute_ttcf(volatility, lowband):
-    """
-    Chaos increases with emotional volatility.
-    Low-band signal = longwave drift component.
-    """
     return float(np.clip(
         0.7 * volatility +
         0.3 * lowband,
@@ -156,10 +144,6 @@ def compute_ttcf(volatility, lowband):
 # DRIFT — directional change potential
 # ---------------------------------------------------------
 def compute_drift(fils, ucip, stability_inverse):
-    """
-    Drift increases when FILS and UCIP diverge
-    OR when stability drops.
-    """
     drift_raw = abs(fils - ucip) + stability_inverse
     return float(np.clip(drift_raw / 2.0, 0, 1))
 
@@ -168,9 +152,6 @@ def compute_drift(fils, ucip, stability_inverse):
 # RIPPLE SCORE — unified intention-field metric
 # ---------------------------------------------------------
 def compute_ripplescore(fils, ucip, drift):
-    """
-    Weighted mean of intention + coherence – chaos drift.
-    """
     score = (0.45 * fils) + (0.45 * ucip) - (0.25 * drift)
     return float(np.clip(score, 0, 1))
 
@@ -181,18 +162,15 @@ def compute_ripplescore(fils, ucip, drift):
 def run_intention_math(text: str, narrative: dict) -> dict:
     """
     The REAL RippleTruth Intention Engine.
-    Computes FILS, UCIP, TTCF, Drift, RippleScore using
-    Kevin Day’s intention-field equations.
+    Computes FILS, UCIP, TTCF, Drift, RippleScore.
     """
 
-    # ---- Extract raw narrative signals ----
     intent_strength = _intent_strength(text)
     stability = _semantic_stability(text)
     emotion = _emotional_vector(text)
     volatility = _emotional_volatility(text)
     harmonics = _narrative_harmonics(text)
 
-    # ---- Apply intention math ----
     fils = compute_fils(intent_strength, stability, emotion)
     ucip = compute_ucip(fils, stability, harmonics)
     ttcf = compute_ttcf(volatility, volatility * 0.2)
@@ -205,8 +183,6 @@ def run_intention_math(text: str, narrative: dict) -> dict:
         "TTCF": round(ttcf, 4),
         "Drift": round(drift, 4),
         "RippleScore": round(ripplescore, 4),
-
-        # Debug signals (optional for UI)
         "debug": {
             "intent_strength": intent_strength,
             "stability": stability,
@@ -215,4 +191,3 @@ def run_intention_math(text: str, narrative: dict) -> dict:
             "harmonics": harmonics,
         }
     }
-

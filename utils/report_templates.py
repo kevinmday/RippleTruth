@@ -1,13 +1,29 @@
 import textwrap
 
-# Bind to package so Streamlit Cloud resolves namespace correctly
-from rippletruth.core import pipeline
+"""
+RippleTruth — Report Template Builder
+-------------------------------------
+This module builds the Markdown report used by the Streamlit UI.
+It integrates:
+
+• Narrative Scan (RippleScan Lite)
+• Intention Math (FILS, UCIP, TTCF, Drift, RippleScore)
+• Traceback Engine
+• Interpretation Engine (Option B)
+
+Everything returned here is rendered directly in the Streamlit app.
+"""
 
 
-def build_markdown_report(narrative: dict, intention: dict, traceback: dict) -> str:
+def build_markdown_report(
+    narrative: dict,
+    intention: dict,
+    traceback: dict,
+    interpretation: str
+) -> str:
     """
     Build the full RippleTruth Markdown report.
-    This fully matches the working UI layout and uses real intention + traceback fields.
+    Now supports the Option B Interpretation Engine.
     """
 
     # ------------------------------------------------------------
@@ -48,24 +64,40 @@ def build_markdown_report(narrative: dict, intention: dict, traceback: dict) -> 
     # ------------------------------------------------------------
     trace = traceback
 
-    interpretation = trace.get("interpretation", "")
-    interpretation_wrapped = textwrap.fill(interpretation, width=90)
+    # IMPORTANT: Use the REAL KEYS produced by traceback_engine
+    origin_label      = trace.get("origin_label", "Unknown")
+    amplification_raw = trace.get("amplification_pattern", "Unknown")
+    mutation_raw      = trace.get("mutation_likelihood", "Unknown")
+    rti               = trace.get("RippleTruthIndex", "N/A")
 
     traceback_block = f"""
 ## 🧭 Traceback / Origin Analysis
 
-**Origin Probability:** {trace.get('origin', 'Unknown')}  
-**Amplification Pattern:** {trace.get('amplification', 'Unknown')}  
-**Mutation Likelihood:** {trace.get('mutation', 'Unknown')}  
+**Origin Probability (Top Actor):** {origin_label}  
+**Amplification Pattern:** {amplification_raw}  
+**Mutation Likelihood:** {mutation_raw}  
 
-**RippleTruth Index:** {trace.get('rti', 'N/A')}/100
+**RippleTruth Index:** {rti}/100
+"""
 
-### Interpretation:
+    # ------------------------------------------------------------
+    # 4. Interpretation Block (from Interpretation Engine)
+    # ------------------------------------------------------------
+    interpretation_wrapped = textwrap.fill(
+        interpretation,
+        width=90,
+        break_long_words=False,
+        replace_whitespace=False
+    )
+
+    interpretation_block = f"""
+## 🧠 RippleTruth Interpretation
+
 {interpretation_wrapped}
 """
 
     # ------------------------------------------------------------
-    # Final Combined Report
+    # 5. Final Combined Report
     # ------------------------------------------------------------
     full_report = f"""
 {narrative_block}
@@ -74,16 +106,19 @@ def build_markdown_report(narrative: dict, intention: dict, traceback: dict) -> 
 
 {traceback_block}
 
+{interpretation_block}
+
 ---
 
-### 🧠 RippleTruth Interpretation
+### System Notes
 
 This report reflects the combined output of:  
 - RippleScan narrative extraction  
 - Intention-field analysis  
 - Traceback signal inference  
+- Interpretation engine (intention × structure × propagation)
 
-The **RippleTruth Index** integrates polarity, emotional load, origin likelihood,
+The **RippleTruth Index** merges polarity, emotional load, origin likelihood,
 amplification patterns, and mutation risk into a single reliability score.
 
 ---

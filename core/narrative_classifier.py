@@ -1,8 +1,9 @@
 import re
 import textwrap
 
-# Bind this module explicitly to the package (Cloud-safe)
-from rippletruth.core import intention_math
+# 🚫 Removed the broken import:
+# from core import intention_math
+# This file does not use intention_math, and keeping it creates circular imports.
 
 
 def analyze_narrative(text: str) -> dict:

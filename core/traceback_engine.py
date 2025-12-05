@@ -1,9 +1,5 @@
 import numpy as np
 
-# Bind to package namespace for Streamlit Cloud resolution
-from rippletruth.core import intention_math
-
-
 # ---------------------------------------------------------
 # Actor Probability Templates
 # These are NOT classifications — they are priors.
@@ -30,7 +26,7 @@ def _mutation_likelihood(stability: float, volatility: float) -> float:
 # ---------------------------------------------------------
 def _amplification_pattern(ucip: float, ttcf: float) -> float:
     """
-    Low amplification = stable, low-chaos signals  
+    Low amplification = stable, low-chaos signals
     High amplification = chaotic, unstable, emotionally peaked
     """
     amp = (ucip * 0.5) - (ttcf * 0.5)
@@ -66,13 +62,39 @@ def _score_actor(intent_strength, stability, harmonics, ripplescore):
 
 
 # ---------------------------------------------------------
-# Traceback Engine (REAL VERSION)
+# NEW FUNCTION — Safe Origin Classification
+# Replaces low-confidence actors with:
+#       "general – low signal origin"
+# ---------------------------------------------------------
+def _resolve_origin(actor_probs: dict, threshold: float = 0.55):
+    """
+    Determines the most likely actor OR returns
+    'general – low signal origin' when confidence is weak.
+    """
+
+    if not actor_probs:
+        return "general – low signal origin", 0.0
+
+    # Sort by highest probability
+    items = sorted(actor_probs.items(), key=lambda x: x[1], reverse=True)
+    top_actor, top_prob = items[0]
+
+    # If not confident → fallback
+    if top_prob < threshold:
+        return "general – low signal origin", top_prob
+
+    return top_actor, top_prob
+
+
+# ---------------------------------------------------------
+# Traceback Engine (UPDATED VERSION WITH LOW-SIGNAL LOGIC)
 # ---------------------------------------------------------
 def run_traceback(text: str, narrative: dict, intention: dict | None = None) -> dict:
     """
     REAL RippleTruth Traceback Engine.
     Computes:
       - actor probability distribution
+      - origin label (with low-signal fallback)
       - amplification pattern
       - mutation likelihood
       - RippleTruth Index (0–100)
@@ -85,6 +107,7 @@ def run_traceback(text: str, narrative: dict, intention: dict | None = None) -> 
     if not intention:
         return {
             "actor_probabilities": {},
+            "origin_label": "general – low signal origin",
             "amplification_pattern": 0,
             "mutation_likelihood": 0,
             "RippleTruthIndex": 0,
@@ -115,6 +138,9 @@ def run_traceback(text: str, narrative: dict, intention: dict | None = None) -> 
         ripplescore=ripplescore,
     )
 
+    # Resolve actor vs low-signal fallback
+    origin_label, origin_conf = _resolve_origin(actor_probs)
+
     # -----------------------------------------------------
     # 3) Mutation likelihood
     # -----------------------------------------------------
@@ -138,12 +164,10 @@ def run_traceback(text: str, narrative: dict, intention: dict | None = None) -> 
     rti = float(np.clip(rti * 100, 1, 99))
 
     # -----------------------------------------------------
-    # 6) Interpretation
+    # 6) Interpretation (updated to use low-signal origin label)
     # -----------------------------------------------------
-    dominant_actor = max(actor_probs, key=actor_probs.get)
-
     interpretation = (
-        f"A narrative originating from **{dominant_actor}** with "
+        f"A narrative originating from **{origin_label}** with "
         f"an amplification profile of **{'Low' if amplification < 0.45 else 'High'} amplification**, "
         f"and a mutation likelihood of **{round(mutation, 2)}**, "
         f"produces a RippleTruth reliability score of **{round(rti, 1)}/100**."
@@ -154,6 +178,8 @@ def run_traceback(text: str, narrative: dict, intention: dict | None = None) -> 
     # -----------------------------------------------------
     return {
         "actor_probabilities": actor_probs,
+        "origin_label": origin_label,
+        "origin_confidence": origin_conf,
         "amplification_pattern": amplification,
         "mutation_likelihood": mutation,
         "RippleTruthIndex": rti,
