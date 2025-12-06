@@ -11,6 +11,7 @@ from io import BytesIO
 
 from utils.input_resolver import resolve_input
 from core.pipeline import run_rippletruth_pipeline
+from core.human_narrative_layer import human_narrative_summary
 
 
 # --------------------------------------------------------
@@ -31,7 +32,10 @@ st.markdown(
 )
 
 st.title("RippleTruth — Intention-Based Traceback Analyzer")
-st.caption("Upload text, images, or URLs and generate a RippleTruth Analysis Report using RippleScan + Intention Math + Traceback.")
+st.caption(
+    "Upload text, images, or URLs and generate a RippleTruth Analysis Report using "
+    "RippleScan + Intention Math + Traceback."
+)
 
 
 # --------------------------------------------------------
@@ -59,7 +63,7 @@ elif input_type == "URL":
 
 
 # --------------------------------------------------------
-# OPTIONAL UTILITY: Load image from URL
+# OPTIONAL: Load image from URL
 # --------------------------------------------------------
 def fetch_image_from_url(url):
     try:
@@ -79,7 +83,7 @@ if run_button:
     st.header("RippleTruth Report")
 
     # --------------------------------------------------------
-    # UNIFIED INPUT RESOLUTION
+    # RESOLVE INPUT
     # --------------------------------------------------------
     resolved = resolve_input(
         text_input=user_text,
@@ -88,7 +92,7 @@ if run_button:
     )
 
     # --------------------------------------------------------
-    # VALIDATION / ERROR HANDLING
+    # VALIDATION
     # --------------------------------------------------------
     if resolved["source_type"] is None:
         st.error("No input provided.")
@@ -101,7 +105,7 @@ if run_button:
     text = resolved["text"]
 
     # --------------------------------------------------------
-    # RUN MASTER PIPELINE
+    # RUN PIPELINE
     # --------------------------------------------------------
     output = run_rippletruth_pipeline(text)
 
@@ -112,7 +116,7 @@ if run_button:
 
 
     # --------------------------------------------------------
-    # NARRATIVE SECTION
+    # NARRATIVE SUMMARY
     # --------------------------------------------------------
     st.subheader("🧩 Narrative Summary (RippleScan Lite)")
     st.markdown(
@@ -126,10 +130,9 @@ if run_button:
 
 
     # --------------------------------------------------------
-    # INTENTION FIELD METRICS
+    # INTENTION METRICS
     # --------------------------------------------------------
     st.subheader("🔬 Intention Field Metrics")
-
     st.table({
         "Metric": ["FILS", "UCIP", "TTCF", "Drift", "RippleScore"],
         "Value": [
@@ -143,7 +146,7 @@ if run_button:
 
 
     # --------------------------------------------------------
-    # TRACEBACK ANALYSIS (UPDATED)
+    # TRACEBACK / ORIGIN ANALYSIS
     # --------------------------------------------------------
     st.subheader("🛰️ Traceback / Origin Analysis")
 
@@ -154,25 +157,30 @@ if run_button:
     mut = round(trace["mutation_likelihood"], 3)
     rti = round(trace["RippleTruthIndex"], 1)
 
-    # Origin Display (new logic)
-    if origin_label == "general – low signal origin":
-        st.markdown(
-            f"**Origin Assessment:** *{origin_label}*  \n"
-            f"**Confidence:** {origin_conf:.3f}"
-        )
-    else:
-        st.markdown(
-            f"**Origin Assessment:** {origin_label}  \n"
-            f"**Confidence:** {origin_conf:.3f}"
-        )
-
+    st.markdown(
+        f"**Origin Assessment:** "
+        f"{origin_label if origin_label != 'general – low signal origin' else '*' + origin_label + '*'}  \n"
+        f"**Confidence:** {origin_conf:.3f}"
+    )
     st.markdown(f"**Amplification Pattern:** {amp}")
     st.markdown(f"**Mutation Likelihood:** {mut}")
     st.markdown(f"**RippleTruth Index:** {rti} / 100")
 
 
     # --------------------------------------------------------
-    # FINAL SUMMARY — REAL INTERPRETATION ENGINE OUTPUT
+    # HUMAN NARRATIVE LAYER (NEW)
+    # --------------------------------------------------------
+    st.subheader("🧩 Human Narrative Assessment")
+
+    try:
+        human_text = human_narrative_summary(narrative, intention)
+        st.markdown(human_text, unsafe_allow_html=True)
+    except Exception as e:
+        st.warning(f"Human Narrative Layer unavailable: {e}")
+
+
+    # --------------------------------------------------------
+    # INTERPRETATION ENGINE — FINAL SUMMARY
     # --------------------------------------------------------
     st.subheader("🧠 RippleTruth Interpretation")
 
