@@ -1,7 +1,7 @@
 streamlit
 numpy
 pandas
-scikit-learn==1.5.1
+
 requests
 beautifulsoup4
 lxml
