@@ -1,18 +1,35 @@
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
 
 # ---------------------------------------------------------
-# HELPER: Convert text into TF-IDF vector (semantic anchor)
+# HELPER: Simple token-frequency vector (replaces sklearn TF-IDF)
 # ---------------------------------------------------------
 def _get_vector(text: str):
-    try:
-        vect = TfidfVectorizer(stop_words="english")
-        X = vect.fit_transform([text])
-        return X.toarray()[0]
-    except:
+    """
+    Cloud-safe vectorizer.
+    Creates a fixed-length frequency vector (32-dim) without sklearn.
+    """
+    tokens = text.lower().split()
+    if not tokens:
         return np.zeros(32)
+
+    unique = sorted(set(tokens))
+    freq = [tokens.count(u) / len(tokens) for u in unique]
+
+    # Normalize to 32 dimensions
+    vec = freq[:32]
+    if len(vec) < 32:
+        vec.extend([0.0] * (32 - len(vec)))
+
+    return np.array(vec, dtype=float)
+
+
+# ---------------------------------------------------------
+# HELPER: Cosine similarity without sklearn
+# ---------------------------------------------------------
+def _cosine(a, b):
+    dot = np.dot(a, b)
+    denom = np.linalg.norm(a) * np.linalg.norm(b)
+    return dot / denom if denom else 0.0
 
 
 # ---------------------------------------------------------
@@ -45,10 +62,8 @@ def _semantic_stability(text: str) -> float:
     sims = []
 
     for i in range(len(vectors) - 1):
-        a = vectors[i].reshape(1, -1)
-        b = vectors[i + 1].reshape(1, -1)
         try:
-            sims.append(float(cosine_similarity(a, b)))
+            sims.append(_cosine(vectors[i], vectors[i + 1]))
         except:
             sims.append(0.3)
 
