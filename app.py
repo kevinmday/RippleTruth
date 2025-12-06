@@ -8,11 +8,12 @@ import streamlit as st
 import requests
 from PIL import Image
 from io import BytesIO
+from bs4 import BeautifulSoup
 
 from utils.input_resolver import resolve_input
 from core.pipeline import run_rippletruth_pipeline
 from core.human_narrative_layer import human_narrative_summary
-from core.ai_engine import run_ai_enhancement   # NEW AI MODULE
+from core.ai_engine import run_ai_enhancement
 
 
 # --------------------------------------------------------
@@ -33,7 +34,10 @@ st.markdown(
 )
 
 st.title("RippleTruth — Intention-Based Traceback Analyzer")
-st.caption("Upload text, images, or URLs and generate an AI-enhanced RippleTruth Intelligence Report using RippleScan + Intention Math + Traceback + Human Mode + AI Expansion.")
+st.caption(
+    "Upload text, images, or URLs and generate an AI-enhanced RippleTruth Intelligence Report using "
+    "RippleScan + Intention Math + Traceback + Human Mode + AI Expansion."
+)
 
 
 # --------------------------------------------------------
@@ -41,7 +45,7 @@ st.caption("Upload text, images, or URLs and generate an AI-enhanced RippleTruth
 # --------------------------------------------------------
 with st.expander("🔑 Optional: Add OpenAI API Key for AI Enhancements"):
     api_key = st.text_input("Enter OpenAI API Key:", type="password")
-    st.caption("AI enhancements will remain disabled unless a valid key is entered.")
+    st.caption("AI enhancements remain disabled unless a valid key is entered.")
 
 
 # --------------------------------------------------------
@@ -84,14 +88,29 @@ elif input_type == "URL":
 
 
 # --------------------------------------------------------
-# Utility: Load image from URL
+# CLEAN ARTICLE SCRAPER (Option A)
 # --------------------------------------------------------
-def fetch_image_from_url(url):
+def extract_clean_article(url: str) -> str:
+    """Lightweight, Streamlit-safe article extraction."""
     try:
-        resp = requests.get(url)
-        return Image.open(BytesIO(resp.content))
+        resp = requests.get(url, timeout=10)
     except:
-        return None
+        return "[Error: Could not retrieve URL]"
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    # Remove scripts, styles, junk
+    for tag in soup(["script", "style", "header", "footer", "nav", "aside"]):
+        tag.decompose()
+
+    # Heuristic: find largest block of <p> text
+    paragraphs = soup.find_all("p")
+    text_blocks = [p.get_text().strip() for p in paragraphs if len(p.get_text().strip()) > 40]
+
+    if not text_blocks:
+        return "[No readable article text found]"
+
+    return "\n\n".join(text_blocks)
 
 
 # --------------------------------------------------------
@@ -112,6 +131,15 @@ if run_button:
         image_upload=uploaded_image
     )
 
+    # URL CLEAN EXTRACTION (Option A)
+    if input_type == "URL" and url_value:
+        st.info("Extracting clean article text from URL…")
+        clean_text = extract_clean_article(url_value)
+        if clean_text.startswith("[Error") or clean_text.startswith("[No readable"):
+            st.error(clean_text)
+            st.stop()
+        resolved["text"] = clean_text
+
     if resolved["source_type"] is None:
         st.error("No input provided.")
         st.stop()
@@ -123,7 +151,7 @@ if run_button:
     text = resolved["text"]
 
     # --------------------------------------------------------
-    # RUN CORE RIPPLETRUTH PIPELINE
+    # RUN CORE PIPELINE
     # --------------------------------------------------------
     output = run_rippletruth_pipeline(text)
 
@@ -145,7 +173,6 @@ if run_button:
         """
     )
 
-
     # --------------------------------------------------------
     # INTENTION FIELD METRICS
     # --------------------------------------------------------
@@ -161,7 +188,6 @@ if run_button:
             intention["RippleScore"],
         ]
     })
-
 
     # --------------------------------------------------------
     # TRACEBACK / ORIGIN
@@ -180,18 +206,16 @@ if run_button:
     st.markdown(f"**Mutation Likelihood:** {mut}")
     st.markdown(f"**RippleTruth Index:** {rti} / 100")
 
-
     # --------------------------------------------------------
-    # HUMAN NARRATIVE LAYER (ALWAYS INCLUDED)
+    # HUMAN NARRATIVE LAYER
     # --------------------------------------------------------
     st.subheader("🧠 Human Narrative Assessment")
 
     human_summary = human_narrative_summary(text, intention)
     st.markdown(human_summary)
 
-
     # --------------------------------------------------------
-    # AI ENHANCEMENT (OPTIONAL)
+    # OPTIONAL AI ENHANCEMENT
     # --------------------------------------------------------
     if ai_mode != "None (Math + Human Mode Only)" and not api_key:
         st.warning("AI mode selected but no API key entered.")
@@ -208,7 +232,6 @@ if run_button:
         )
 
         st.markdown(ai_output)
-
 
     # --------------------------------------------------------
     # ORIGINAL INTERPRETATION ENGINE OUTPUT
