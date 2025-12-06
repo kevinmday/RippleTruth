@@ -45,13 +45,12 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 st.title("RippleTruth — Intention Detector")
 
 # Mission line (with dot)
 st.markdown(
     "<p style='font-size:1.05rem; margin-top:-10px;'>"
-    "• RippleTruth reveals the intent behind any text, image, or article • Using mathematics, "
+    "• Reveals the intent behind any text, image, or article • Using mathematics, "
     "narrative pattern analysis, and AI reasoning."
     "</p>",
     unsafe_allow_html=True
@@ -65,6 +64,7 @@ st.caption(
     "Upload text, images, or URLs to generate an AI-enhanced RippleTruth Intelligence Report — "
     "powered by proprietary intention-equations, AI narrative analysis, and a world-sourced information corpus."
 )
+
 
 
 # --------------------------------------------------------
