@@ -46,10 +46,24 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("RippleTruth — Intention-Based Traceback Analyzer")
+st.title("RippleTruth — Intention Detector")
+
+# Mission line (with dot)
+st.markdown(
+    "<p style='font-size:1.05rem; margin-top:-10px;'>"
+    "• RippleTruth reveals the intent behind any text, image, or article • Using mathematics, "
+    "narrative pattern analysis, and AI reasoning."
+    "</p>",
+    unsafe_allow_html=True
+)
+
+# Visual separation
+st.markdown("<div style='margin-top: 20px'></div>", unsafe_allow_html=True)
+
+# Description line (clean, no RippleScan confusion)
 st.caption(
-    "Upload text, images, or URLs and generate an AI-enhanced RippleTruth Intelligence Report using "
-    "RippleScan + Intention Math + Traceback + Human Mode + AI Expansion."
+    "Upload text, images, or URLs to generate an AI-enhanced RippleTruth Intelligence Report — "
+    "powered by proprietary intention-equations, AI narrative analysis, and a world-sourced information corpus."
 )
 
 
