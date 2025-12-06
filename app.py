@@ -12,6 +12,7 @@ from io import BytesIO
 from utils.input_resolver import resolve_input
 from core.pipeline import run_rippletruth_pipeline
 from core.human_narrative_layer import human_narrative_summary
+from core.ai_engine import run_ai_enhancement   # NEW AI MODULE
 
 
 # --------------------------------------------------------
@@ -32,9 +33,29 @@ st.markdown(
 )
 
 st.title("RippleTruth — Intention-Based Traceback Analyzer")
-st.caption(
-    "Upload text, images, or URLs and generate a RippleTruth Analysis Report using "
-    "RippleScan + Intention Math + Traceback."
+st.caption("Upload text, images, or URLs and generate an AI-enhanced RippleTruth Intelligence Report using RippleScan + Intention Math + Traceback + Human Mode + AI Expansion.")
+
+
+# --------------------------------------------------------
+# OPTIONAL OPENAI KEY
+# --------------------------------------------------------
+with st.expander("🔑 Optional: Add OpenAI API Key for AI Enhancements"):
+    api_key = st.text_input("Enter OpenAI API Key:", type="password")
+    st.caption("AI enhancements will remain disabled unless a valid key is entered.")
+
+
+# --------------------------------------------------------
+# AI OUTPUT MODE
+# --------------------------------------------------------
+ai_mode = st.selectbox(
+    "Select AI Output Mode:",
+    [
+        "None (Math + Human Mode Only)",
+        "Narrative Summary",
+        "Counter-Narrative",
+        "Expanded Intelligence Brief",
+        "Executive Summary"
+    ]
 )
 
 
@@ -63,7 +84,7 @@ elif input_type == "URL":
 
 
 # --------------------------------------------------------
-# OPTIONAL: Load image from URL
+# Utility: Load image from URL
 # --------------------------------------------------------
 def fetch_image_from_url(url):
     try:
@@ -83,7 +104,7 @@ if run_button:
     st.header("RippleTruth Report")
 
     # --------------------------------------------------------
-    # RESOLVE INPUT
+    # UNIFIED INPUT RESOLUTION
     # --------------------------------------------------------
     resolved = resolve_input(
         text_input=user_text,
@@ -91,9 +112,6 @@ if run_button:
         image_upload=uploaded_image
     )
 
-    # --------------------------------------------------------
-    # VALIDATION
-    # --------------------------------------------------------
     if resolved["source_type"] is None:
         st.error("No input provided.")
         st.stop()
@@ -105,7 +123,7 @@ if run_button:
     text = resolved["text"]
 
     # --------------------------------------------------------
-    # RUN PIPELINE
+    # RUN CORE RIPPLETRUTH PIPELINE
     # --------------------------------------------------------
     output = run_rippletruth_pipeline(text)
 
@@ -113,7 +131,6 @@ if run_button:
     intention = output["intention"]
     trace = output["traceback"]
     interpretation_text = output["interpretation"]
-
 
     # --------------------------------------------------------
     # NARRATIVE SUMMARY
@@ -130,9 +147,10 @@ if run_button:
 
 
     # --------------------------------------------------------
-    # INTENTION METRICS
+    # INTENTION FIELD METRICS
     # --------------------------------------------------------
     st.subheader("🔬 Intention Field Metrics")
+
     st.table({
         "Metric": ["FILS", "UCIP", "TTCF", "Drift", "RippleScore"],
         "Value": [
@@ -146,7 +164,7 @@ if run_button:
 
 
     # --------------------------------------------------------
-    # TRACEBACK / ORIGIN ANALYSIS
+    # TRACEBACK / ORIGIN
     # --------------------------------------------------------
     st.subheader("🛰️ Traceback / Origin Analysis")
 
@@ -157,32 +175,45 @@ if run_button:
     mut = round(trace["mutation_likelihood"], 3)
     rti = round(trace["RippleTruthIndex"], 1)
 
-    st.markdown(
-        f"**Origin Assessment:** "
-        f"{origin_label if origin_label != 'general – low signal origin' else '*' + origin_label + '*'}  \n"
-        f"**Confidence:** {origin_conf:.3f}"
-    )
+    st.markdown(f"**Origin Assessment:** {origin_label}  \n**Confidence:** {origin_conf:.3f}")
     st.markdown(f"**Amplification Pattern:** {amp}")
     st.markdown(f"**Mutation Likelihood:** {mut}")
     st.markdown(f"**RippleTruth Index:** {rti} / 100")
 
 
     # --------------------------------------------------------
-    # HUMAN NARRATIVE LAYER (NEW)
+    # HUMAN NARRATIVE LAYER (ALWAYS INCLUDED)
     # --------------------------------------------------------
-    st.subheader("🧩 Human Narrative Assessment")
+    st.subheader("🧠 Human Narrative Assessment")
 
-    try:
-        human_text = human_narrative_summary(narrative, intention)
-        st.markdown(human_text, unsafe_allow_html=True)
-    except Exception as e:
-        st.warning(f"Human Narrative Layer unavailable: {e}")
+    human_summary = human_narrative_summary(text, intention)
+    st.markdown(human_summary)
 
 
     # --------------------------------------------------------
-    # INTERPRETATION ENGINE — FINAL SUMMARY
+    # AI ENHANCEMENT (OPTIONAL)
     # --------------------------------------------------------
-    st.subheader("🧠 RippleTruth Interpretation")
+    if ai_mode != "None (Math + Human Mode Only)" and not api_key:
+        st.warning("AI mode selected but no API key entered.")
+    elif api_key and ai_mode != "None (Math + Human Mode Only)":
+        st.subheader("🤖 AI-Enhanced Output")
+
+        ai_output = run_ai_enhancement(
+            text=text,
+            narrative=narrative,
+            intention=intention,
+            traceback=trace,
+            mode=ai_mode,
+            api_key=api_key
+        )
+
+        st.markdown(ai_output)
+
+
+    # --------------------------------------------------------
+    # ORIGINAL INTERPRETATION ENGINE OUTPUT
+    # --------------------------------------------------------
+    st.subheader("🧩 RippleTruth Interpretation")
 
     st.markdown(
         interpretation_text

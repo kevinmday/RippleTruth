@@ -5,25 +5,60 @@
 # narrative for normal users: Who, What, Where, When, Why.
 # ------------------------------------------------------------
 
-def human_narrative_summary(narrative, metrics):
+def human_narrative_summary(text, metrics):
     """
-    narrative: dict from RippleScan (topic, polarity, tone, structure)
+    text: raw user input string
     metrics: dict from intention_math (FILS, UCIP, TTCF, Drift, RippleScore)
+
+    Since no structured narrative classifier is active yet,
+    topic / polarity / tone / structure are inferred heuristically.
     """
 
-    topic = narrative.get("topic", "Unknown").lower()
-    polarity = narrative.get("polarity", "Neutral").lower()
-    tone = narrative.get("tone", "Neutral").lower()
-    structure = narrative.get("structure", "General Statement").lower()
+    # ------------------------------------------------------------
+    # Simple heuristics until the full NLP narrative classifier arrives
+    # ------------------------------------------------------------
+    lower = text.lower()
 
-    fils = metrics.get("FILS", 0)
-    ucip = metrics.get("UCIP", 0)
-    ttcf = metrics.get("TTCF", 0)
+    # Topic guess (very lightweight until classifier module is added)
+    if "immigra" in lower:
+        topic = "immigration"
+    elif "econom" in lower:
+        topic = "economy"
+    elif "border" in lower:
+        topic = "border policy"
+    elif "crime" in lower:
+        topic = "crime / safety"
+    else:
+        topic = "general"
+
+    # Polarity guess
+    polarity = (
+        "negative" if any(w in lower for w in ["bad", "terrible", "fail", "danger"]) else
+        "positive" if any(w in lower for w in ["good", "great", "success"]) else
+        "neutral"
+    )
+
+    # Emotional tone guess
+    tone = (
+        "high emotional load" if any(w in lower for w in ["angry", "outrage", "furious"]) else
+        "moderate emotional load" if any(w in lower for w in ["concern", "worried"]) else
+        "low emotional load"
+    )
+
+    # Structure guess
+    structure = (
+        "call to action" if any(w in lower for w in ["must", "should", "demand"]) else
+        "general statement"
+    )
+
+    fils  = metrics.get("FILS", 0)
+    ucip  = metrics.get("UCIP", 0)
+    ttcf  = metrics.get("TTCF", 0)
     drift = metrics.get("Drift", 0)
     score = metrics.get("RippleScore", 0)
 
     # ------------------------------------------------------------
-    # WHO (probable source category)
+    # WHO
     # ------------------------------------------------------------
     if score < 0.15:
         who = "likely a private individual expressing a low-impact opinion"
@@ -35,7 +70,7 @@ def human_narrative_summary(narrative, metrics):
         who = "high-intensity messaging often seen in coordinated political operations or strategic comms"
 
     # ------------------------------------------------------------
-    # WHAT (intent of the message)
+    # WHAT
     # ------------------------------------------------------------
     if fils < 0.25:
         what = "sets context without pushing a specific conclusion"
@@ -45,7 +80,7 @@ def human_narrative_summary(narrative, metrics):
         what = "directs the audience toward a clear emotional or political position"
 
     # ------------------------------------------------------------
-    # WHERE (position within narrative cycle)
+    # WHERE
     # ------------------------------------------------------------
     if drift < 0.2:
         where = "appears early in the narrative cycle — no momentum yet"
@@ -55,7 +90,7 @@ def human_narrative_summary(narrative, metrics):
         where = "sits in a volatile narrative region where messaging may intensify"
 
     # ------------------------------------------------------------
-    # WHEN (urgency)
+    # WHEN
     # ------------------------------------------------------------
     if ttcf < 0.15:
         when = "low urgency — stable emotional landscape"
@@ -65,7 +100,7 @@ def human_narrative_summary(narrative, metrics):
         when = "high urgency — chaos rising or emotional energy building"
 
     # ------------------------------------------------------------
-    # WHY IT MATTERS (impact + risk)
+    # WHY
     # ------------------------------------------------------------
     if score < 0.2:
         why = "The message has limited persuasive force but may seed early-stage framing."
@@ -82,7 +117,7 @@ def human_narrative_summary(narrative, metrics):
         )
 
     # ------------------------------------------------------------
-    # Build the final human-readable narrative
+    # Final Output
     # ------------------------------------------------------------
     return f"""
 ### 🧭 Narrative Intelligence Summary (Human Mode)
@@ -91,7 +126,7 @@ def human_narrative_summary(narrative, metrics):
 This message is **{who}**.
 
 **What the message is trying to do:**  
-It **{what}**, delivered with a **{tone} emotional tone** and a **{polarity} polarity**.
+It **{what}**, delivered with a **{tone}** and a **{polarity} polarity**.
 
 **Where it sits in the broader conversation:**  
 It **{where}**, based on coherence (UCIP {ucip:.2f}) and drift dynamics ({drift:.2f}).
