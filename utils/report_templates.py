@@ -1,130 +1,182 @@
-import textwrap
+# =============================================================
+# RippleTruth — Markdown Report Renderer (PsiQuant + FactStack)
+# =============================================================
+# Matches pipeline signature:
+#
+# build_markdown_report(
+#     narrative,
+#     intention,
+#     traceback,
+#     interpretation,
+#     narrative_engine=None,
+#     fact_stack=None
+# )
+# =============================================================
 
+import json
+
+
+# =============================================================
+# Safe Section Formatter  (FIXED)
+# =============================================================
+def _fmt_section(title: str, body) -> str:
+    """Uniform section renderer that safely accepts any type."""
+
+    # Normalize all values to string for markdown
+    if isinstance(body, (dict, list)):
+        body = "```json\n" + json.dumps(body, indent=2) + "\n```"
+    else:
+        body = str(body)
+
+    return f"## {title}\n{body.strip()}\n\n"
+
+
+# =============================================================
+# Narrative Block
+# =============================================================
+def _render_narrative_block(narrative: dict) -> str:
+    topic     = narrative.get("topic", "Unknown")
+    polarity  = narrative.get("polarity", "Unknown")
+    tone      = narrative.get("tone", "Unknown")
+    structure = narrative.get("structure", "Unknown")
+
+    return f"""
+**Topic:** {topic}  
+**Polarity:** {polarity}  
+**Tone:** {tone}  
+**Structure:** {structure}
+    """
+
+
+# =============================================================
+# Intention Math Block
+# =============================================================
+def _render_intention_block(intention: dict) -> str:
+    FILS  = intention.get("FILS")
+    UCIP  = intention.get("UCIP")
+    TTCF  = intention.get("TTCF")
+    Drift = intention.get("Drift")
+    RS    = intention.get("RippleScore")
+    PSI   = intention.get("PsiQuant")
+
+    block = f"""
+**FILS (Forward Intention Load):** {FILS}  
+**UCIP (Coherence Index):** {UCIP}  
+**TTCF (Chaos Factor):** {TTCF}  
+**Drift:** {Drift}  
+**RippleScore:** {RS}  
 """
-RippleTruth — Report Template Builder
--------------------------------------
-This module builds the Markdown report used by the Streamlit UI.
-It integrates:
 
-• Narrative Scan (RippleScan Lite)
-• Intention Math (FILS, UCIP, TTCF, Drift, RippleScore)
-• Traceback Engine
-• Interpretation Engine (Option B)
+    if PSI is not None:
+        block += f"**PsiQuant Score:** {PSI}\n"
 
-Everything returned here is rendered directly in the Streamlit app.
-"""
+    return block
 
 
+# =============================================================
+# Traceback Block
+# =============================================================
+def _render_traceback_block(trace: dict) -> str:
+    actors = trace.get("actor_probabilities", {})
+    amp    = trace.get("amplification_pattern", 0)
+    mut    = trace.get("mutation_likelihood", 0)
+    rti    = trace.get("RippleTruthIndex", 0)
+
+    if actors:
+        actors_md = "\n".join([f"- **{k}:** {round(v*100,1)}%" for k, v in actors.items()])
+    else:
+        actors_md = "_No actor data available_"
+
+    return f"""
+### Actor Probability Model
+{actors_md}
+
+**Amplification Pattern:** {amp}  
+**Mutation Likelihood:** {mut}  
+**RippleTruth Index:** {round(rti,1)}/100
+    """
+
+
+# =============================================================
+# FactStack Block
+# =============================================================
+def _render_fact_stack_block(fact_stack: dict | None) -> str:
+    if not fact_stack:
+        return "_No Fact-Stack analysis performed._"
+
+    facts = fact_stack.get("facts", [])
+    reliability = fact_stack.get("reliability_score")
+    density = fact_stack.get("fact_density")
+
+    out = ""
+
+    if facts:
+        out += "**Extracted Facts:**\n"
+        for f in facts:
+            out += f"- {f}\n"
+        out += "\n"
+    else:
+        out += "_No extractable factual anchors detected._\n\n"
+
+    out += f"**Fact Density:** {density}\n"
+    out += f"**Reliability Score:** {reliability}\n"
+
+    return out
+
+
+# =============================================================
+# Narrative Engine Block (PSI-QUANT FUSION)
+# =============================================================
+def _render_narrative_engine_block(ne: dict | None) -> str:
+    if not ne:
+        return "_Narrative engine not invoked._"
+
+    tier = ne.get("tier")
+    analysis = ne.get("analysis")
+    use_openai = ne.get("use_openai")
+
+    return f"""
+**Tier:** {tier}  
+**Analysis:** {analysis}  
+**OpenAI Enabled:** {use_openai}
+    """
+
+
+# =============================================================
+# MASTER BUILDER
+# =============================================================
 def build_markdown_report(
-    narrative: dict,
-    intention: dict,
-    traceback: dict,
-    interpretation: str
-) -> str:
-    """
-    Build the full RippleTruth Markdown report.
-    Now supports the Option B Interpretation Engine.
-    """
+    narrative,
+    intention,
+    traceback,
+    interpretation,
+    narrative_engine=None,
+    fact_stack=None,
+):
+    """Builds the full markdown report for UI rendering."""
 
-    # ------------------------------------------------------------
-    # 1. Narrative Summary
-    # ------------------------------------------------------------
-    nar = narrative
-    narrative_block = f"""
-# RippleTruth Report
+    report = ""
 
-## RippleTruth Analysis Report
+    # Narrative Layer
+    report += _fmt_section("Narrative Analysis", _render_narrative_block(narrative))
 
-## 🧩 Narrative Summary (RippleScan Lite)
+    # Intention Math Layer
+    report += _fmt_section("Intention Metrics", _render_intention_block(intention))
 
-**Topic:** {nar.get('topic', 'Unknown')}  
-**Polarity:** {nar.get('polarity', 'Unknown')}  
-**Emotional Tone:** {nar.get('emotion_tone', 'Unknown')}  
-**Structure:** {nar.get('structure', 'Unknown')}
-"""
+    # PsiQuant Layer
+    if intention.get("PsiQuant") is not None:
+        report += _fmt_section("PsiQuant Scoring", f"**PsiQuant:** {intention.get('PsiQuant')}")
 
-    # ------------------------------------------------------------
-    # 2. Intention Field Metrics
-    # ------------------------------------------------------------
-    inten = intention
-    intention_block = f"""
-## 🔮 Intention Field Metrics
+    # FactStack Layer
+    report += _fmt_section("Fact Stack", _render_fact_stack_block(fact_stack))
 
-| Metric        | Value |
-|---------------|-------|
-| FILS          | {inten.get("FILS")} |
-| UCIP          | {inten.get("UCIP")} |
-| TTCF          | {inten.get("TTCF")} |
-| Drift         | {inten.get("Drift")} |
-| RippleScore   | {inten.get("RippleScore")} |
-"""
+    # Narrative Engine Fusion Layer
+    report += _fmt_section("Narrative Engine (Fusion)", _render_narrative_engine_block(narrative_engine))
 
-    # ------------------------------------------------------------
-    # 3. Traceback / Origin Analysis
-    # ------------------------------------------------------------
-    trace = traceback
+    # Traceback Layer
+    report += _fmt_section("Traceback Modeling", _render_traceback_block(traceback))
 
-    # IMPORTANT: Use the REAL KEYS produced by traceback_engine
-    origin_label      = trace.get("origin_label", "Unknown")
-    amplification_raw = trace.get("amplification_pattern", "Unknown")
-    mutation_raw      = trace.get("mutation_likelihood", "Unknown")
-    rti               = trace.get("RippleTruthIndex", "N/A")
+    # Interpretation Layer
+    report += _fmt_section("Interpretation", interpretation)
 
-    traceback_block = f"""
-## 🧭 Traceback / Origin Analysis
-
-**Origin Probability (Top Actor):** {origin_label}  
-**Amplification Pattern:** {amplification_raw}  
-**Mutation Likelihood:** {mutation_raw}  
-
-**RippleTruth Index:** {rti}/100
-"""
-
-    # ------------------------------------------------------------
-    # 4. Interpretation Block (from Interpretation Engine)
-    # ------------------------------------------------------------
-    interpretation_wrapped = textwrap.fill(
-        interpretation,
-        width=90,
-        break_long_words=False,
-        replace_whitespace=False
-    )
-
-    interpretation_block = f"""
-## 🧠 RippleTruth Interpretation
-
-{interpretation_wrapped}
-"""
-
-    # ------------------------------------------------------------
-    # 5. Final Combined Report
-    # ------------------------------------------------------------
-    full_report = f"""
-{narrative_block}
-
-{intention_block}
-
-{traceback_block}
-
-{interpretation_block}
-
----
-
-### System Notes
-
-This report reflects the combined output of:  
-- RippleScan narrative extraction  
-- Intention-field analysis  
-- Traceback signal inference  
-- Interpretation engine (intention × structure × propagation)
-
-The **RippleTruth Index** merges polarity, emotional load, origin likelihood,
-amplification patterns, and mutation risk into a single reliability score.
-
----
-
-Generated with **RippleTruth™**  
-_Powered by Intention Frameworks_
-"""
-
-    return full_report.strip()
+    return report

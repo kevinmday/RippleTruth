@@ -45,6 +45,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 st.title("RippleTruth — Intention Detector")
 
 # Mission line (with dot)
@@ -59,12 +60,11 @@ st.markdown(
 # Visual separation
 st.markdown("<div style='margin-top: 20px'></div>", unsafe_allow_html=True)
 
-# Description line (clean, no RippleScan confusion)
+# Description line
 st.caption(
     "Upload text, images, or URLs to generate an AI-enhanced RippleTruth Intelligence Report — "
     "powered by proprietary intention-equations, AI narrative analysis, and a world-sourced information corpus."
 )
-
 
 
 # --------------------------------------------------------
@@ -197,7 +197,7 @@ if run_button:
     )
 
     # --------------------------------------------------------
-    # INTENTION FIELD METRICS TABLE (FIXED VERSION)
+    # INTENTION FIELD METRICS
     # --------------------------------------------------------
     st.subheader("🔬 Intention Field Metrics")
 
@@ -213,65 +213,14 @@ if run_button:
     table_html = f"""
 <table class="metric-table">
 <tr><th>Metric</th><th>Value</th></tr>
-
-<tr>
-<td>FILS <span class='metric-tooltip' title='Forward Intention Likelihood Score — How primed the narrative is to spread.'>ⓘ</span></td>
-<td>{colorize(intention['FILS'])}</td>
-</tr>
-
-<tr>
-<td>UCIP <span class='metric-tooltip' title='Unified Intention Field Scalar — Measures coherence and structural force.'>ⓘ</span></td>
-<td>{colorize(intention['UCIP'])}</td>
-</tr>
-
-<tr>
-<td>TTCF <span class='metric-tooltip' title='Chaos Factor — Measures volatility and mutation potential.'>ⓘ</span></td>
-<td>{colorize(intention['TTCF'])}</td>
-</tr>
-
-<tr>
-<td>Drift <span class='metric-tooltip' title='Alignment Shift — Measures narrative wobble over time.'>ⓘ</span></td>
-<td>{colorize(intention['Drift'])}</td>
-</tr>
-
-<tr>
-<td>RippleScore <span class='metric-tooltip' title='Composite Stability Index — Overall signal cohesion and strength.'>ⓘ</span></td>
-<td>{colorize(intention['RippleScore'])}</td>
-</tr>
-
+<tr><td>FILS</td><td>{colorize(intention['FILS'])}</td></tr>
+<tr><td>UCIP</td><td>{colorize(intention['UCIP'])}</td></tr>
+<tr><td>TTCF</td><td>{colorize(intention['TTCF'])}</td></tr>
+<tr><td>Drift</td><td>{colorize(intention['Drift'])}</td></tr>
+<tr><td>RippleScore</td><td>{colorize(intention['RippleScore'])}</td></tr>
 </table>
 """
-
     st.markdown(table_html, unsafe_allow_html=True)
-
-    # --------------------------------------------------------
-    # EXPANDED DEEP DIVE
-    # --------------------------------------------------------
-    with st.expander("📘 Deep Dive: Understanding the Intention Metrics"):
-        st.markdown(
-            """
-### **FILS — Forward Intention Likelihood Score**  
-Likelihood a narrative is primed to spread or escalate.  
-Low FILS means the message will likely fade; high FILS means it can mobilize or travel quickly.
-
-### **UCIP — Unified Intention Field Scalar**  
-Measures coherence, density, and structural force inside the intention field.  
-High UCIP suggests coordinated framing or strong emotional anchor.
-
-### **TTCF — Chaos Factor**  
-Reflects instability, unpredictability, and mutation potential.  
-High TTCF means the narrative environment is volatile or rumor-driven.
-
-### **Drift — Alignment Shift**  
-Represents wobble or direction change in intention over time.  
-High drift means the narrative is being reframed or evolving fast.
-
-### **RippleScore — Composite Stability Index**  
-Blends all metrics into one overall coherence + stability score.  
-Low = fragmented, emerging narrative.  
-High = structured, stable narrative environment.
-"""
-        )
 
     # --------------------------------------------------------
     # TRACEBACK / ORIGIN
@@ -311,11 +260,17 @@ High = structured, stable narrative environment.
         st.markdown(ai_output)
 
     # --------------------------------------------------------
-    # ORIGINAL INTERPRETATION
+    # INTERPRETATION (FIXED)
     # --------------------------------------------------------
     st.subheader("🧩 RippleTruth Interpretation")
 
-    if interpretation_text.strip():
+    # FIX: Convert dict → readable markdown
+    if isinstance(interpretation_text, dict):
+        interpretation_text = "\n".join(
+            f"**{k}:** {v}" for k, v in interpretation_text.items()
+        )
+
+    if interpretation_text and isinstance(interpretation_text, str) and interpretation_text.strip():
         st.markdown(interpretation_text)
     else:
         st.markdown("_(No interpretation returned.)_")

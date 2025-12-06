@@ -1,5 +1,5 @@
 # ------------------------------------------------------------
-# RippleTruth Pipeline — URL + Text Aware Version
+# RippleTruth Pipeline — URL + Text + Narrative Engine + FactStack
 # ------------------------------------------------------------
 
 # LOCAL IMPORTS
@@ -7,7 +7,9 @@ from core.narrative_classifier import analyze_narrative
 from core.intention_math import run_intention_math
 from core.traceback_engine import run_traceback
 from core.interpretation_engine import generate_interpretation
-from core.url_engine import fetch_url_text          # ← NEW
+from core.url_engine import fetch_url_text
+from core.narrative_engine.narrative_engine import NarrativeEngine
+from core.narrative_engine.fact_stack import FactStackEngine      # <-- NEW
 from utils.report_templates import build_markdown_report
 
 
@@ -62,26 +64,57 @@ def run_rippletruth_pipeline(input_data: str, input_mode: str = "TEXT") -> dict:
     trace = run_traceback(text, narrative, intention)
 
     # ------------------------------------------------------------
-    # 4. Interpretation Layer
-    #    NOTE: MUST USE POSITIONAL ARGUMENTS IN ORDER
+    # 4. Unified Narrative Engine (PSI-QUANT Integration)
     # ------------------------------------------------------------
-    interpretation = generate_interpretation(narrative, intention, trace)
+    n_engine = NarrativeEngine()
+    narrative_engine_output = n_engine.analyze(
+        text=text,
+        math_results=intention,
+        narrative_type=narrative
+    )
 
     # ------------------------------------------------------------
-    # 5. Final Markdown (UI Layer)
+    # 5. FACT-STACK ENGINE (NEW)
+    # ------------------------------------------------------------
+    fact_engine = FactStackEngine()
+    fact_stack_output = fact_engine.analyze(text)
+
+    # ------------------------------------------------------------
+    # 6. Interpretation Layer
+    #    NOTE: MUST USE POSITIONAL ARGS IN ORDER
+    #    Now expects *4* objects:
+    #    (narrative, intention, trace, narrative_engine_output)
+    # ------------------------------------------------------------
+    interpretation = generate_interpretation(
+        narrative,
+        intention,
+        trace,
+        narrative_engine_output    # <-- still correct
+        # Fact-Stack NOT fed into interpretation yet (v1 design)
+    )
+
+    # ------------------------------------------------------------
+    # 7. Final Markdown (UI Layer)
     # ------------------------------------------------------------
     markdown_report = build_markdown_report(
         narrative=narrative,
         intention=intention,
         traceback=trace,
-        interpretation=interpretation
+        interpretation=interpretation,
+        narrative_engine=narrative_engine_output,
+        fact_stack=fact_stack_output                # <-- NEW
     )
 
+    # ------------------------------------------------------------
+    # 8. Return unified bundle
+    # ------------------------------------------------------------
     return {
         "markdown": markdown_report,
         "narrative": narrative,
         "intention": intention,
         "traceback": trace,
+        "narrative_engine": narrative_engine_output,
+        "fact_stack": fact_stack_output,            # <-- NEW
         "interpretation": interpretation,
         "input_text": text,
         "input_mode": input_mode
