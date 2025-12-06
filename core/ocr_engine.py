@@ -1,31 +1,23 @@
-import easyocr
-from PIL import Image
-import numpy as np
+# ---------------------------------------------------------
+# RippleTruth OCR Engine (Fallback Mode)
+# ---------------------------------------------------------
+# This version is Cloud-safe and removes all heavy OCR deps.
+# Image uploads will still be accepted, but OCR will return
+# a clear message instead of breaking the app.
+# ---------------------------------------------------------
 
-# Initialize once (Cloud-optimized)
-_reader = easyocr.Reader(['en'], gpu=False)
-
-def extract_text_from_image(upload) -> str:
+def extract_text_from_image(image_file):
     """
-    Cloud-safe OCR using EasyOCR.
-    No Tesseract dependency. Works on Streamlit Cloud.
+    Fallback OCR handler for Streamlit Cloud.
+
+    Instead of performing real OCR (which requires EasyOCR or
+    other heavy dependencies not supported in Cloud), this
+    function returns a clean notice so the pipeline can continue
+    without failing.
     """
 
-    try:
-        # Load image
-        image = Image.open(upload).convert("RGB")
-        image_np = np.array(image)
+    return (
+        "[OCR unavailable on this platform — image processing disabled. "
+        "Please use Text or URL mode instead.]"
+    )
 
-        # Run OCR
-        results = _reader.readtext(image_np, detail=0)
-
-        if not results:
-            return "[No readable text detected in image.]"
-
-        # Join text fragments
-        text = "\n".join(results).strip()
-
-        return text if text else "[No readable text detected in image.]"
-
-    except Exception as e:
-        return f"[OCR Error: {e}]"
