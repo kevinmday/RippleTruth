@@ -25,9 +25,22 @@ st.markdown(
     """
     <style>
         body { font-family: 'Roboto', sans-serif; }
-        .stTextInput, .stTextArea {
-            font-family: 'Roboto Mono', monospace !important;
+
+        .metric-table td, .metric-table th {
+            padding: 6px 12px !important;
+            text-align: left !important;
         }
+
+        .metric-tooltip {
+            color: #AAA;
+            cursor: help;
+            padding-left: 6px;
+        }
+
+        .value-green { color: #5CFF8F !important; font-weight: 600; }
+        .value-yellow { color: #FFD447 !important; font-weight: 600; }
+        .value-red { color: #FF6B6B !important; font-weight: 600; }
+        .value-blue { color: #6EC6FF !important; font-weight: 600; }
     </style>
     """,
     unsafe_allow_html=True
@@ -70,7 +83,6 @@ input_type = st.radio(
     "Select Input Type:",
     ["Text", "Image", "URL"],
     horizontal=True,
-    label_visibility="collapsed",
 )
 
 user_text = None
@@ -88,7 +100,7 @@ elif input_type == "URL":
 
 
 # --------------------------------------------------------
-# CLEAN ARTICLE SCRAPER (Option A)
+# CLEAN ARTICLE SCRAPER
 # --------------------------------------------------------
 def extract_clean_article(url: str) -> str:
     """Lightweight, Streamlit-safe article extraction."""
@@ -99,11 +111,9 @@ def extract_clean_article(url: str) -> str:
 
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # Remove scripts, styles, junk
     for tag in soup(["script", "style", "header", "footer", "nav", "aside"]):
         tag.decompose()
 
-    # Heuristic: find largest block of <p> text
     paragraphs = soup.find_all("p")
     text_blocks = [p.get_text().strip() for p in paragraphs if len(p.get_text().strip()) > 40]
 
@@ -131,7 +141,6 @@ if run_button:
         image_upload=uploaded_image
     )
 
-    # URL CLEAN EXTRACTION (Option A)
     if input_type == "URL" and url_value:
         st.info("Extracting clean article text from URL…")
         clean_text = extract_clean_article(url_value)
@@ -144,14 +153,14 @@ if run_button:
         st.error("No input provided.")
         st.stop()
 
-    if resolved["text"].startswith("[Error") or resolved["text"].startswith("[No readable"):
-        st.error(resolved["text"])
-        st.stop()
-
     text = resolved["text"]
 
+    if text.startswith("[Error") or text.startswith("[No readable"):
+        st.error(text)
+        st.stop()
+
     # --------------------------------------------------------
-    # RUN CORE PIPELINE
+    # RUN PIPELINE
     # --------------------------------------------------------
     output = run_rippletruth_pipeline(text)
 
@@ -174,20 +183,81 @@ if run_button:
     )
 
     # --------------------------------------------------------
-    # INTENTION FIELD METRICS
+    # INTENTION FIELD METRICS TABLE (FIXED VERSION)
     # --------------------------------------------------------
     st.subheader("🔬 Intention Field Metrics")
 
-    st.table({
-        "Metric": ["FILS", "UCIP", "TTCF", "Drift", "RippleScore"],
-        "Value": [
-            intention["FILS"],
-            intention["UCIP"],
-            intention["TTCF"],
-            intention["Drift"],
-            intention["RippleScore"],
-        ]
-    })
+    def colorize(value):
+        if value < 0.15:
+            return f"<span class='value-green'>{value:.4f}</span>"
+        if value < 0.35:
+            return f"<span class='value-yellow'>{value:.4f}</span>"
+        if value < 0.55:
+            return f"<span class='value-blue'>{value:.4f}</span>"
+        return f"<span class='value-red'>{value:.4f}</span>"
+
+    table_html = f"""
+<table class="metric-table">
+<tr><th>Metric</th><th>Value</th></tr>
+
+<tr>
+<td>FILS <span class='metric-tooltip' title='Forward Intention Likelihood Score — How primed the narrative is to spread.'>ⓘ</span></td>
+<td>{colorize(intention['FILS'])}</td>
+</tr>
+
+<tr>
+<td>UCIP <span class='metric-tooltip' title='Unified Intention Field Scalar — Measures coherence and structural force.'>ⓘ</span></td>
+<td>{colorize(intention['UCIP'])}</td>
+</tr>
+
+<tr>
+<td>TTCF <span class='metric-tooltip' title='Chaos Factor — Measures volatility and mutation potential.'>ⓘ</span></td>
+<td>{colorize(intention['TTCF'])}</td>
+</tr>
+
+<tr>
+<td>Drift <span class='metric-tooltip' title='Alignment Shift — Measures narrative wobble over time.'>ⓘ</span></td>
+<td>{colorize(intention['Drift'])}</td>
+</tr>
+
+<tr>
+<td>RippleScore <span class='metric-tooltip' title='Composite Stability Index — Overall signal cohesion and strength.'>ⓘ</span></td>
+<td>{colorize(intention['RippleScore'])}</td>
+</tr>
+
+</table>
+"""
+
+    st.markdown(table_html, unsafe_allow_html=True)
+
+    # --------------------------------------------------------
+    # EXPANDED DEEP DIVE
+    # --------------------------------------------------------
+    with st.expander("📘 Deep Dive: Understanding the Intention Metrics"):
+        st.markdown(
+            """
+### **FILS — Forward Intention Likelihood Score**  
+Likelihood a narrative is primed to spread or escalate.  
+Low FILS means the message will likely fade; high FILS means it can mobilize or travel quickly.
+
+### **UCIP — Unified Intention Field Scalar**  
+Measures coherence, density, and structural force inside the intention field.  
+High UCIP suggests coordinated framing or strong emotional anchor.
+
+### **TTCF — Chaos Factor**  
+Reflects instability, unpredictability, and mutation potential.  
+High TTCF means the narrative environment is volatile or rumor-driven.
+
+### **Drift — Alignment Shift**  
+Represents wobble or direction change in intention over time.  
+High drift means the narrative is being reframed or evolving fast.
+
+### **RippleScore — Composite Stability Index**  
+Blends all metrics into one overall coherence + stability score.  
+Low = fragmented, emerging narrative.  
+High = structured, stable narrative environment.
+"""
+        )
 
     # --------------------------------------------------------
     # TRACEBACK / ORIGIN
@@ -197,31 +267,25 @@ if run_button:
     origin_label = trace.get("origin_label", "general – low signal origin")
     origin_conf = trace.get("origin_confidence", 0.0)
 
-    amp = round(trace["amplification_pattern"], 3)
-    mut = round(trace["mutation_likelihood"], 3)
-    rti = round(trace["RippleTruthIndex"], 1)
-
     st.markdown(f"**Origin Assessment:** {origin_label}  \n**Confidence:** {origin_conf:.3f}")
-    st.markdown(f"**Amplification Pattern:** {amp}")
-    st.markdown(f"**Mutation Likelihood:** {mut}")
-    st.markdown(f"**RippleTruth Index:** {rti} / 100")
+    st.markdown(f"**Amplification Pattern:** {trace['amplification_pattern']:.3f}")
+    st.markdown(f"**Mutation Likelihood:** {trace['mutation_likelihood']:.3f}")
+    st.markdown(f"**RippleTruth Index:** {trace['RippleTruthIndex']:.1f} / 100")
 
     # --------------------------------------------------------
     # HUMAN NARRATIVE LAYER
     # --------------------------------------------------------
     st.subheader("🧠 Human Narrative Assessment")
-
-    human_summary = human_narrative_summary(text, intention)
-    st.markdown(human_summary)
+    st.markdown(human_narrative_summary(text, intention))
 
     # --------------------------------------------------------
-    # OPTIONAL AI ENHANCEMENT
+    # OPTIONAL AI OUTPUT
     # --------------------------------------------------------
     if ai_mode != "None (Math + Human Mode Only)" and not api_key:
         st.warning("AI mode selected but no API key entered.")
+
     elif api_key and ai_mode != "None (Math + Human Mode Only)":
         st.subheader("🤖 AI-Enhanced Output")
-
         ai_output = run_ai_enhancement(
             text=text,
             narrative=narrative,
@@ -230,16 +294,14 @@ if run_button:
             mode=ai_mode,
             api_key=api_key
         )
-
         st.markdown(ai_output)
 
     # --------------------------------------------------------
-    # ORIGINAL INTERPRETATION ENGINE OUTPUT
+    # ORIGINAL INTERPRETATION
     # --------------------------------------------------------
     st.subheader("🧩 RippleTruth Interpretation")
 
-    st.markdown(
-        interpretation_text
-        if interpretation_text.strip()
-        else "_(No interpretation returned.)_"
-    )
+    if interpretation_text.strip():
+        st.markdown(interpretation_text)
+    else:
+        st.markdown("_(No interpretation returned.)_")
